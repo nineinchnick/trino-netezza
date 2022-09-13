@@ -13,13 +13,31 @@
  */
 package io.trino.plugin.netezza;
 
-import io.trino.plugin.jdbc.JdbcPlugin;
+import com.google.common.collect.ImmutableList;
+import com.google.inject.Module;
+import io.airlift.configuration.ConfigurationAwareModule;
+import io.trino.plugin.jdbc.ExtraCredentialsBasedJdbcIdentityCacheMappingModule;
+import io.trino.plugin.jdbc.credential.CredentialProviderModule;
+import io.trino.spi.Plugin;
+import io.trino.spi.connector.ConnectorFactory;
 
 public class NetezzaPlugin
-        extends JdbcPlugin
+        implements Plugin
 {
+    private final String name;
+    private final Module module;
+
     public NetezzaPlugin()
     {
-        super("netezza", new NetezzaClientModule());
+        this.name = "netezza";
+        this.module = new NetezzaClientModule();
+    }
+
+    public Iterable<ConnectorFactory> getConnectorFactories()
+    {
+        return ImmutableList.of(new NetezzaConnectorFactory(this.name, ConfigurationAwareModule.combine(
+                new CredentialProviderModule(),
+                new ExtraCredentialsBasedJdbcIdentityCacheMappingModule(),
+                this.module)));
     }
 }
